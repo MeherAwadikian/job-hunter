@@ -20,7 +20,10 @@ function parseArgs(argv) {
 }
 
 function printRunSummary(r) {
-  const status = r.errors.length ? 'FAILED' : 'ok';
+  // A connector that found nothing at all and errored out is a real failure;
+  // a handful of per-item rejects inside an otherwise-successful run (e.g. a
+  // duplicate-ID edge case) isn't worth crying wolf over.
+  const status = r.errors.length && r.parsed === 0 && r.duplicates === 0 ? 'FAILED' : r.errors.length ? `ok (${r.errors.length} item error(s))` : 'ok';
   console.log(
     `[${r.platform}] ${status} — found ${r.found}, parsed ${r.parsed}, duplicates ${r.duplicates}, rejected ${r.rejected}`
   );

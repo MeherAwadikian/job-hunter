@@ -1,12 +1,10 @@
-# Upwork — investigated, not implemented (needs a decision)
+# Upwork — accessible via authenticated Chrome, but not automatable as a CLI connector
 
-- **Acquisition method:** None viable unauthenticated. Requires an authenticated browser session.
-- **API:** Official API exists but is gated behind strict eligibility: $25,000+ lifetime earnings/spend, 90%+ Job Success Score, verified identity/payment method, account in good standing. The user has no existing Upwork account history in the Hermes records — almost certainly doesn't qualify yet. OAuth 2.0 if it ever becomes available.
-- **Webhook:** No.
-- **RSS:** Officially discontinued by Upwork after 2024-08-20 — a previously-viable path that no longer exists.
-- **Scraper:** **Attempted, structurally blocked.** Direct curl returns 403. Firecrawl's rendered scrape gets through with **no CAPTCHA** and real job titles/descriptions visible (confirmed 2026-10-05, e.g. "AI Automation Engineer / Consultant for Business Workflow Automation" with full description) — but **zero job-posting URLs anywhere in the response**, neither in the rendered markdown links nor in the raw HTML (`href="/jobs/..."` pattern: 0 matches). This is deliberate anti-scraping design, not a transient block: Upwork renders job content for SEO/logged-out browsing but omits the links a scraper would need to actually reach or apply to a posting.
-- **MCP:** Not investigated — moot until the URL problem is solved.
-- **Authentication:** Required to get real job URLs and application flow. This is the actual blocker, not bot-detection.
-- **Browser requirement:** Yes — Playwright MCP or Claude in Chrome with the user's own logged-in Upwork session, per the brief's priority order (official API > authenticated browser > Playwright > Chrome last resort).
-- **Why not built:** Logging into a real Upwork account via browser automation is a decision with real consequences (the account's own activity/rate-limit exposure, ToS considerations) — not something to do without the user explicitly choosing to proceed and providing/approving the session.
-- **What would unblock it:** User confirms (a) they have an Upwork account to use, and (b) wants Playwright MCP installed and pointed at an authenticated session for this specific connector. Until then, Upwork stays un-implemented, matching the brief's own Phase 9/Tier-4 placement as the most complex connector.
+- **Acquisition method:** None usable from job-hunter's own Node code. Confirmed accessible through the user's existing, already-logged-in Upwork freelancer account in Chrome.
+- **API:** Official API gated behind $25k lifetime earnings/spend + 90% Job Success Score — user doesn't qualify.
+- **RSS:** Discontinued by Upwork in 2024.
+- **Unauthenticated scraping:** No CAPTCHA, but the logged-out page structurally omits every job-posting URL (unchanged finding) — nothing to link to.
+- **Authenticated browser check (2026-10-05):** Navigated to Upwork's "Find Work" page via Claude-in-Chrome, reusing the user's real Chrome profile. The user has an active, logged-in freelancer account ("My proposals", "My profile", job search tabs all present) — this is the same account/session that would see real job URLs and could actually submit proposals.
+- **Why this isn't built as a `node src/cli.js scan --platform upwork` connector:** Same reason as Glassdoor — Claude-in-Chrome only runs inside a live chat turn, not from job-hunter's own unattended Node process. There's no way to turn this into a scheduled/scriptable connector without Playwright reusing a persistent authenticated context, which wasn't set up without explicit buy-in (risk of profile-lock conflicts with the user's actual running Chrome).
+- **What actually works today:** Ask me (in a live chat) to check Upwork via Chrome and I can pull real job listings and URLs from the authenticated feed on demand.
+- **What would make this a real automated connector:** Playwright with a safely-isolated persistent authenticated context (a separate browser profile, logged into Upwork once, reused by automation) — a real decision given it touches the user's actual freelancer account and its own rate-limit/ToS exposure.

@@ -19,6 +19,7 @@ import * as peopleperhour from '../connectors/peopleperhour.js';
 import * as furrsati from '../connectors/furrsati.js';
 import * as olx from '../connectors/olx.js';
 import * as ats from '../connectors/ats.js';
+import * as indeed from '../connectors/indeed.js';
 
 export const CONNECTORS = {
   remoteok,
@@ -33,6 +34,7 @@ export const CONNECTORS = {
   furrsati,
   olx,
   ats,
+  indeed,
 };
 
 function ensureProfile(db) {

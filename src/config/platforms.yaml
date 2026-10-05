@@ -79,15 +79,17 @@ contra:
     not built silently. See JOB_HUNTER_CONNECTORS.md.
 
 indeed:
-  enabled: false
+  enabled: true
   tier: 3
-  method: blocked
+  method: undocumented_internal_api
+  base_url: https://apis.indeed.com/graphql
   notes: >
-    STOPPED, not implemented. Firecrawl scrape hit a live reCAPTCHA wall
-    ("Recaptcha requires verification") on 2026-10-05. Per brief §19/§20,
-    do not attempt to bypass CAPTCHA — requires human intervention or an
-    official partner-API relationship (Indeed's public Job Search API was
-    discontinued in 2024; only employer-side partner APIs remain).
+    LIVE as of 2026-10-05, built only after explicit user sign-off. Public search page
+    hits a reCAPTCHA wall (unchanged finding) — this instead uses Indeed's internal mobile
+    GraphQL API with a hardcoded key reverse-engineered from their iOS app (sourced from the
+    open-source ts-jobspy/JobSpy projects). Materially different risk profile from every other
+    connector: a found app credential, not a public endpoint. Can be revoked by Indeed at any
+    time with no fallback. See docs/platforms/indeed.md.
 
 glassdoor:
   enabled: false

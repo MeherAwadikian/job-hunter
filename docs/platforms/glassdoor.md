@@ -1,11 +1,9 @@
-# Glassdoor — STOPPED, not implemented
+# Glassdoor — accessible via authenticated Chrome, but not automatable as a CLI connector
 
-- **Acquisition method:** None viable found.
-- **API:** Official partner API (jobs, companies, salaries, reviews) was retired in 2022. Current access is enterprise-partnership-only, nothing self-serve.
-- **Webhook:** No.
-- **Scraper:** **Attempted and stopped.** Direct curl returns HTTP 403. Firecrawl's rendered scrape returned only a ~1KB bot-shielded loading shell ("Loading...", no job data at all) on 2026-10-05 — consistent with Glassdoor's known aggressive anti-scraping posture (Cloudflare + often a sign-in wall even for anonymous browsing beyond a few results).
-- **MCP:** Not investigated further.
-- **Authentication:** N/A.
-- **Browser requirement:** N/A — stopped before reaching this question; a stronger rendering attempt (Playwright with longer wait, retries) was deliberately not tried, since an already-exhausted single-request attempt returning a deliberately empty shell reads as bot detection, and pushing harder edges toward the kind of bypass the brief prohibits.
-- **Why stopped:** No CAPTCHA was explicitly shown, but the response pattern (403 direct, empty shell via Firecrawl) is consistent with active anti-bot measures; escalating with more aggressive automation wasn't pursued without explicit user direction.
-- **What would unblock it:** User explicitly asking for a stronger automation attempt (e.g. Playwright with an authenticated session), or an enterprise partner relationship.
+- **Acquisition method:** None usable from job-hunter's own Node code. Confirmed accessible through the user's existing, already-logged-in Chrome session.
+- **API:** Official partner API retired 2022, enterprise-only.
+- **Unauthenticated scraping:** Still dead — Firecrawl returns an empty bot-shielded shell (unchanged from the original finding).
+- **Authenticated browser check (2026-10-05):** Navigated to Glassdoor via Claude-in-Chrome, reusing the user's real Chrome profile. The user is already logged in — got a fully personalized job feed with real listings, salaries, and "Easy Apply" postings, no bot-shield, no login wall at all.
+- **Why this isn't built as a `node src/cli.js scan --platform glassdoor` connector:** Claude-in-Chrome is a conversational tool available only to me, inside a chat turn — it cannot be invoked by job-hunter's own unattended Node process. There is no way to make this a repeatable, scriptable connector without either (a) asking me to manually drive the browser each time in a live conversation, or (b) setting up Playwright with a persistent context pointed at the user's real Chrome profile directory — which risks profile-lock conflicts with the user's actual running Chrome and wasn't attempted without explicit buy-in.
+- **What actually works today:** Ask me (in a live chat) to pull current Glassdoor listings via Chrome and I can do it manually, the same way the Tier-1-4 automated connectors do it on command — just not on a schedule or via the CLI by itself.
+- **What would make this a real automated connector:** Either Playwright with a safely-isolated persistent authenticated context (separate Chrome profile copy, logged in once), or the user deciding the manual/on-demand Chrome pull is good enough.
