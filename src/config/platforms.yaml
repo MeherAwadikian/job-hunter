@@ -1,0 +1,126 @@
+# Platform registry. Only Tier 1 is implemented; others are placeholders
+# for future connectors per JOB_HUNTER_CONNECTORS.md.
+
+remoteok:
+  enabled: true
+  tier: 1
+  method: api
+  base_url: https://remoteok.com/api
+  fallback: []
+
+arbeitnow:
+  enabled: true
+  tier: 1
+  method: api
+  base_url: https://www.arbeitnow.com/api/job-board-api
+  fallback: []
+
+expertini:
+  enabled: true
+  tier: 1
+  method: firecrawl
+  base_url: https://lb.expertini.com/jobs/
+  notes: No RSS feed exists (checked robots.txt + probes 2026-10-05, despite original assumption); uses Firecrawl.
+
+daleel-madani:
+  enabled: true
+  tier: 1
+  method: firecrawl
+  base_url: https://daleel-madani.org/jobs
+  fallback: [html]
+
+twine:
+  enabled: true
+  tier: 2
+  method: firecrawl
+  base_url: https://www.twine.net/jobs
+  notes: No API/RSS; listing is client-rendered, confirmed via direct curl 2026-10-05.
+
+bayt:
+  enabled: true
+  tier: 2
+  method: firecrawl
+  base_url: https://www.bayt.com/en/lebanon/jobs/
+  notes: No API/RSS; direct HTTP returns 403, confirmed via curl 2026-10-05.
+
+shghilni:
+  enabled: true
+  tier: 2
+  method: firecrawl
+  base_url: https://shghilni.com/en/jobs
+  notes: No API/RSS; listing is client-rendered, confirmed via direct curl 2026-10-05.
+
+guru:
+  enabled: true
+  tier: 2
+  method: firecrawl
+  base_url: https://www.guru.com/d/jobs/
+  notes: >
+    Initially built on plain HTTP (confirmed server-rendered via curl), but Guru sits behind
+    an Incapsula WAF that started returning 403 on every request during testing regardless of
+    User-Agent. Downgraded to Firecrawl, which gets through reliably. See docs/platforms/guru.md.
+
+peopleperhour:
+  enabled: true
+  tier: 2
+  method: firecrawl
+  base_url: https://www.peopleperhour.com/freelance-jobs
+  notes: No API/RSS; listing is client-rendered, confirmed via direct curl 2026-10-05.
+
+contra:
+  enabled: false
+  tier: 2
+  method: official_api
+  base_url: https://contra.com/public-api/
+  notes: >
+    Has a genuine official read-only public API (X-API-Key auth) plus a hosted MCP server
+    (contra.com/mcp) — the best Tier-2 find, no scraping needed. NOT implemented: requires
+    the user to create a Contra account and self-serve an API key. Flagged for a decision,
+    not built silently. See JOB_HUNTER_CONNECTORS.md.
+
+indeed:
+  enabled: false
+  tier: 3
+  method: blocked
+  notes: >
+    STOPPED, not implemented. Firecrawl scrape hit a live reCAPTCHA wall
+    ("Recaptcha requires verification") on 2026-10-05. Per brief §19/§20,
+    do not attempt to bypass CAPTCHA — requires human intervention or an
+    official partner-API relationship (Indeed's public Job Search API was
+    discontinued in 2024; only employer-side partner APIs remain).
+
+glassdoor:
+  enabled: false
+  tier: 3
+  method: blocked
+  notes: >
+    STOPPED, not implemented. Firecrawl scrape returned an empty bot-shielded
+    loading shell (~1KB, no job data) on 2026-10-05, consistent with
+    Glassdoor's known aggressive anti-scraping posture (public API retired
+    2022). Not pursued further per brief's anti-bypass rule.
+
+furrsati:
+  enabled: true
+  tier: 3
+  method: firecrawl
+  base_url: https://furrsati.com/jobs
+  notes: No API/RSS; a community Furrsati MCP connector exists but only searches freelancer profiles, not job postings. Listing is client-rendered, confirmed via curl.
+
+olx:
+  enabled: true
+  tier: 3
+  method: firecrawl
+  base_url: https://www.olx.com.lb/jobs/jobs-available/
+  notes: No API/RSS; direct curl returns HTTP 202 with an empty body (bot-challenge pattern). Firecrawl's separate `links` output used to recover ad URLs since the rendered markdown drops the anchor around each card.
+
+upwork:
+  enabled: false
+  tier: 4
+  method: authenticated_browser_required
+  notes: >
+    Investigated 2026-10-05. Official API gated behind $25k lifetime earnings/spend + 90% JSS
+    (user doesn't qualify). RSS discontinued 2024. Firecrawl scrape gets through with no CAPTCHA
+    and real job content, but Upwork deliberately omits all job-posting URLs from the
+    unauthenticated page — nothing to link to or apply through. Needs Playwright MCP + the
+    user's own authenticated Upwork session; not built without that explicit decision. See
+    docs/platforms/upwork.md.

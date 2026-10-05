@@ -1,0 +1,60 @@
+{
+  "name": "Meher Awadikian",
+  "aliases": ["Meher Krikorian"],
+  "email": "krikormher@gmail.com",
+  "mobile": "+961 81 854079",
+  "location": "Beirut, Lebanon (UTC+3)",
+  "languages": ["Arabic", "French", "English"],
+  "remote_preferences": {
+    "remote_only": false,
+    "timezone_note": "UTC+3 aligns naturally with US night-shift / EMEA day-shift roles",
+    "open_to_local": true
+  },
+  "preferred_roles": [
+    "AI Automation Engineer",
+    "AI Operations Specialist",
+    "Workflow/Automation Engineer (n8n)",
+    "CCTV / Remote Security Operator",
+    "Medical Lab Technologist / Lab Informatics",
+    "Web3/DeFi Community or Operations",
+    "SDR / Sales Operations",
+    "Virtual Assistant / Remote Support"
+  ],
+  "skill_angles": [
+    {
+      "category": "AI/Automation",
+      "skills": ["n8n", "Python", "OpenAI API", "Anthropic API", "Claude Code", "Hermes agents", "workflow automation", "AI agent development"],
+      "weight": 1.0
+    },
+    {
+      "category": "CCTV/Security",
+      "skills": ["CCTV monitoring", "remote security operations", "night-shift coverage"],
+      "weight": 0.7
+    },
+    {
+      "category": "Lab Informatics",
+      "skills": ["Medical Lab Technology", "Hematology", "AUBMC clinical background", "laboratory informatics"],
+      "weight": 0.7
+    },
+    {
+      "category": "Web3/DeFi",
+      "skills": ["crypto-native", "community operations", "DeFi"],
+      "weight": 0.5
+    }
+  ],
+  "opportunity_types_accepted": [
+    "full_time", "part_time", "contract", "freelance",
+    "ai_automation_project", "web_development", "saas_development",
+    "digital_marketing", "seo_aeo", "ai_agent_development",
+    "medical_lab_technology", "sales", "sdr", "operations",
+    "virtual_assistant", "remote_support"
+  ],
+  "outreach_policy": {
+    "max_leads_per_day": 10,
+    "max_outreach_per_day": 10,
+    "never_duplicate_or_generic": true,
+    "never_lead_email_with_dash_or_underscore": true,
+    "signoff": "ResultsDriven Team / resultdriven.online"
+  },
+  "_source": "seeded from ~/AppData/Local/hermes/profiles/remote-jobs/SOUL.md on 2026-10-05; remote-jobs profile kept running in parallel per user decision"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "job-hunter",
+  "version": "0.1.0",
+  "description": "Hermes job-hunter: discovers, scores, and tracks remote job/freelance opportunities across multiple platform connectors.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "job-hunter": "./src/cli.js"
+  },
+  "scripts": {
+    "scan": "node src/cli.js scan",
+    "test": "node src/cli.js test --all"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "js-yaml": "^5.4.2"
+  }
+}
