@@ -1,0 +1,30 @@
+# Companies to query directly via their own public ATS job-board APIs
+# (Greenhouse / Lever / Ashby). These are official, no-auth, no-scraping
+# endpoints each company's own career site uses — the cleanest acquisition
+# method in the whole system (Level 1: official public API).
+#
+# Every token here was verified live via direct curl on 2026-10-05, not
+# guessed — a wrong token 404s cleanly and the connector skips it.
+# Add more by testing:
+#   greenhouse: curl https://boards-api.greenhouse.io/v1/boards/<token>/jobs
+#   lever:      curl https://api.lever.co/v0/postings/<token>?mode=json
+#   ashby:      curl https://api.ashbyhq.com/posting-api/job-board/<token>
+
+greenhouse:
+  - anthropic
+  - stripe
+  - airtable
+  - figma
+  - vercel
+
+lever:
+  - mistral
+
+ashby:
+  - ramp
+  - notion
+  - linear
+  - cohere
+  - browserbase
+  - langchain
+  - elevenlabs
