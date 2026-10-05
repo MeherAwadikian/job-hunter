@@ -1,39 +1,58 @@
-// Application generation (brief §16), delegated to the existing `cv` Hermes
-// profile rather than reimplementing CV/cover-letter tailoring from scratch
-// (per JOB_HUNTER_ARCHITECTURE.md's reuse list). Shells out to the Hermes
-// CLI non-interactively (`-z PROMPT --yolo`).
+// Application generation (brief §16). Originally shelled out to the
+// existing `cv` Hermes profile's CLI (`hermes -p cv -z PROMPT --yolo`), per
+// the reuse decision in JOB_HUNTER_ARCHITECTURE.md. That wrapper proved
+// unreliable in practice on 2026-10-05: two consecutive real runs returned
+// empty/malformed output (no error, no section headers) even though the
+// underlying model answered instantly and correctly when queried directly —
+// consistent with previously-documented Hermes CLI flakiness (see memory
+// feedback_hermes_cli_terminal_unreliable / feedback_hermes_ingestion_quality).
 //
-// Measured cost: ~60-90s per call on the cv profile's local Ollama model
-// (llama3.2:3b) — slow compared to a hosted API, and prone to adding
-// unwanted preamble despite explicit instructions not to (documented
-// Hermes CLI behavior, see memory feedback_hermes_ingestion_quality). This
-// is why generation is opt-in and scoped to a small --limit, not run
-// automatically during scan/score.
+// Fixed by calling the `cv` profile's own Ollama backend (llama3.2:3b,
+// localhost:11434) directly via its OpenAI-compatible API — same model, same
+// local/free cost, just skipping the flaky CLI layer. Still slow (~20-40s)
+// and still prone to the model ignoring formatting instructions, which is
+// why generation stays opt-in and scoped, not run automatically.
 
-import { execFile } from 'node:child_process';
 import { getDb, nowIso } from '../db/init.js';
 
-const HERMES_BIN = 'C:\\Users\\h\\.local\\bin\\hermes';
-const TIMEOUT_MS = 180_000;
+const OLLAMA_URL = 'http://localhost:11434/v1/chat/completions';
+const MODEL = 'llama3.2:3b';
+const TIMEOUT_MS = 120_000;
 
-function runHermes(prompt) {
-  return new Promise((resolve, reject) => {
-    execFile(
-      HERMES_BIN,
-      ['-p', 'cv', '-z', prompt, '--yolo'],
-      { timeout: TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
-      (err, stdout, stderr) => {
-        if (err) reject(new Error(`hermes CLI failed: ${err.message} ${stderr || ''}`.trim()));
-        else resolve(stdout.trim());
-      }
-    );
-  });
+async function runOllama(prompt) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error('Ollama returned no content');
+    return content.trim();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function buildPrompt(job, profile) {
+  const signoff = profile.outreach_policy?.signoff || profile.name;
+  const companyLine = job.company
+    ? `Hiring company/client: ${job.company}.`
+    : `Hiring company/client name is unknown — this job was found via the ${job.platform} freelance/job platform, but ${job.platform} is NOT the employer. Do not name ${job.platform} (or any platform) as the company. Address the letter generically ("Dear Hiring Manager" / "Dear Client") without inventing or guessing a company name.`;
+
   return `You are helping ${profile.name} (${profile.location}) apply to a job. Candidate background: ${profile.skill_angles.map((a) => a.category + ' (' + a.skills.join(', ') + ')').join('; ')}.
 
-JOB: ${job.title} at ${job.company || 'the company'} (${job.platform}).
+JOB: ${job.title}.
+${companyLine}
 Description: ${(job.description || '').slice(0, 1200)}
 
 Produce exactly three sections with these exact headers, nothing before the first header and nothing after the last section's content:
@@ -42,10 +61,10 @@ Produce exactly three sections with these exact headers, nothing before the firs
 (3-5 bullet points tailoring the candidate's existing background to this specific job, each starting with "- ")
 
 ### COVER_LETTER
-(a 3-paragraph cover letter, no salutation preamble like "Here is...", start directly with "Dear Hiring Manager," )
+(a 3-paragraph cover letter, no salutation preamble like "Here is...", start directly with "Dear Hiring Manager," or "Dear Client," )
 
 ### SHORT_MESSAGE
-(a 2-3 sentence short application message suitable for a platform message box, signed "${profile.outreach_policy?.signoff || profile.name}")`;
+(a 2-3 sentence short application message suitable for a platform message box. Open by addressing the client/hiring manager directly — NOT "${signoff}", that is the candidate's own closing signature and must appear only as the LAST line of this section, nothing after it)`;
 }
 
 function parseSections(raw) {
@@ -84,7 +103,7 @@ export async function generateApplication(jobId) {
   const profile = JSON.parse(profileRow.data);
 
   const prompt = buildPrompt(job, profile);
-  const raw = await runHermes(prompt);
+  const raw = await runOllama(prompt);
   const { cv_bullets, cover_letter, short_message } = parseSections(raw);
 
   const now = nowIso();

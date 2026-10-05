@@ -137,7 +137,42 @@ async function main() {
       return;
     }
 
-    console.log(`Usage: node src/cli.js applications list|show <id>|approve <id>|reject <id>`);
+    if (sub === 'queue') {
+      const rows = db.prepare(`
+        SELECT a.id, j.title, j.company, j.platform, j.application_url
+        FROM applications a JOIN jobs j ON j.id = a.job_id
+        WHERE a.status = 'APPROVED'
+        ORDER BY a.updated_at ASC
+      `).all();
+      if (rows.length === 0) {
+        console.log('No approved applications waiting to be submitted.');
+      } else {
+        console.log(`${rows.length} approved application(s) ready for submission (not yet sent):`);
+        for (const r of rows) {
+          console.log(`#${r.id} ${r.title} — ${r.company || 'n/a'} (${r.platform})\n  ${r.application_url}`);
+        }
+      }
+      return;
+    }
+
+    if (sub === 'mark-submitted') {
+      const id = Number(args._[1]);
+      const row = db.prepare('SELECT status FROM applications WHERE id = ?').get(id);
+      if (!row) { console.log(`No application #${id}`); return; }
+      if (row.status !== 'APPROVED') {
+        console.log(`Application #${id} is ${row.status}, not APPROVED — refusing to mark submitted.`);
+        return;
+      }
+      db.prepare('UPDATE applications SET status = ?, updated_at = ? WHERE id = ?').run('SUBMITTED', nowIso(), id);
+      db.prepare(`INSERT INTO job_events (job_id, event, detail, created_at)
+        SELECT job_id, 'APPLICATION_SUBMITTED', ?, ? FROM applications WHERE id = ?`)
+        .run(JSON.stringify({ application_id: id }), nowIso(), id);
+      db.prepare(`UPDATE jobs SET status = 'APPLIED' WHERE id = (SELECT job_id FROM applications WHERE id = ?)`).run(id);
+      console.log(`Application #${id} marked SUBMITTED.`);
+      return;
+    }
+
+    console.log(`Usage: node src/cli.js applications list|show <id>|approve <id>|reject <id>|queue|mark-submitted <id>`);
     return;
   }
 
