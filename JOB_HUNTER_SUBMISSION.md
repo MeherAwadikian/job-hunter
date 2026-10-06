@@ -1,7 +1,9 @@
 # Job Hunter — Submission Workflow (manual, Chrome-driven, human-confirmed)
 
-## Status: proven live, 2026-10-05
-First real end-to-end submission: **Automation Engineer - Influencers @ ElevenLabs** (job id 2818, application id 5, via the `ats`/Ashby connector). Real form, real resume, real submission, real "Success" confirmation from Ashby.
+## Status: proven live, 2026-10-05 and 2026-10-06
+Two real end-to-end submissions so far:
+1. **Automation Engineer - Influencers @ ElevenLabs** (job id 2818, application id 5, via the `ats`/Ashby connector). Real form, real resume, real submission, real "Success" confirmation from Ashby.
+2. **AI Systems & Automation Engineer @ Ethos Interactive** (job id 3019, application id 6) — found live via Bayt's site search (not yet in the cached `bayt` connector run), required creating a real Bayt account first (user did this themselves per the login-handoff pattern), then routed through Bayt's "Apply on company site" to the employer's real SmartRecruiters ATS. Hit a genuine tooling limit: the resume dropzone was a web component with its file input fully encapsulated in shadow DOM, unreachable by `file_upload`/`read_page` even after confirming via direct JS DOM inspection — resolved by asking the user to drag-and-drop the file themselves (saved to `Desktop/cvv/eleven.pdf` for them first). Screening questions (nationality, availability, experience band, salary) were answered with real user-provided figures, not invented.
 
 ## Why this isn't a CLI command
 Filling and submitting an application requires driving a real browser against a specific site's form, and — critically — reading and answering screening questions honestly from the candidate's real background. That's not something `node src/cli.js` can do unattended. It's done by Claude (via Claude-in-Chrome) in a live chat, on request, per job — never automated/scheduled.
@@ -20,6 +22,11 @@ Programmatically setting form field values (`form_input` with direct DOM value a
 Some fields that looked optional turned out to be required (red asterisk only visible on close inspection): "Link to your GitHub profile" and "Link to something you've built" both required actual URLs. The project's GitHub repo was private at the time — made public (`gh repo edit --visibility public`) after explicit user confirmation, since a private-repo link would be useless to the employer anyway. Always scroll through the entire form once before assuming optional fields can stay blank.
 
 ## Platforms confirmed usable for this workflow
-- **ATS (Greenhouse/Lever/Ashby)** — no login required, guest application forms. Proven 2026-10-05.
+- **ATS (Greenhouse/Lever/Ashby)** — no login required, guest application forms. Proven 2026-10-05 (ElevenLabs).
+- **Bayt** — required creating a real account first (user did this via the login-handoff pattern below); once logged in, "Apply on company site" routes to the employer's own ATS (SmartRecruiters in this case) rather than staying on Bayt. Proven 2026-10-06 (Ethos Interactive).
 - **Glassdoor, Upwork** — real logged-in accounts confirmed via Chrome (2026-10-05), not yet used for an actual submission.
 - **Guru, Twine, PeoplePerHour, Shghilni, Furrsati** — **no accounts exist** on any of these (confirmed by checking each directly, correcting an earlier wrong assumption). Would need real account creation first, which is a user decision, not something to do silently.
+- **RemoteOK/Arbeitnow** — real candidates checked 2026-10-05 turned up a confirmed crypto-recruitment scam ring (two near-identical listings, same tracking hash, vague company names, external unknown apply domains — flagged and skipped), plus location-restricted and skill-mismatched roles. No submission yet from these two platforms; worth another pass but treat every "too good to be true" junior/part-time crypto listing on RemoteOK as a scam signal, not just a mismatch.
+
+## Login handoff pattern (when no account exists)
+When a platform requires an account that doesn't exist yet: open the signup/login page in Chrome, tell the user exactly what's needed and why, and wait for them to create the account or log in themselves. Never fill in a password or create an account with fabricated identity details. Once they confirm, continue from their authenticated session.
