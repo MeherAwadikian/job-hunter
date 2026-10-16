@@ -54,7 +54,7 @@
     "max_outreach_per_day": 10,
     "never_duplicate_or_generic": true,
     "never_lead_email_with_dash_or_underscore": true,
-    "signoff": "ResultsDriven Team / resultdriven.online"
+    "signoff": "Meher Awadikian"
   },
   "_source": "seeded from ~/AppData/Local/hermes/profiles/remote-jobs/SOUL.md on 2026-10-05; remote-jobs profile kept running in parallel per user decision"
 }

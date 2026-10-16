@@ -17,7 +17,7 @@ import { getDb, nowIso } from '../db/init.js';
 
 const OLLAMA_URL = 'http://localhost:11434/v1/chat/completions';
 const MODEL = 'llama3.2:3b';
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = 300_000;
 
 async function runOllama(prompt) {
   const controller = new AbortController();
@@ -88,6 +88,43 @@ function parseSections(raw) {
   };
 }
 
+// The local model (llama3.2:3b) occasionally hallucinates a signoff/brand
+// that has nothing to do with this prompt (observed: signing a personal job
+// application as "ResultsDriven Team / resultdriven.online", the signoff
+// used for a *different*, cold-outreach-agency persona elsewhere in this
+// user's tooling — not sourced from this prompt's profile.name at all).
+// Caught by actually reading generated output rather than trusting the
+// model followed instructions. Guard against it explicitly rather than
+// re-discovering this every session.
+const KNOWN_CONTAMINATION_STRINGS = ['resultsdriven', 'resultdriven.online'];
+
+function findContamination(text) {
+  const lower = (text || '').toLowerCase();
+  return KNOWN_CONTAMINATION_STRINGS.find((bad) => lower.includes(bad)) || null;
+}
+
+// Retrying the same prompt does NOT help — verified 2026-10-16, two
+// independent calls with the identical prompt both hallucinated the exact
+// same "ResultsDriven Team / resultdriven.online" trailer, so this isn't
+// sampling noise to retry past. Sanitize instead: cut the text at the first
+// point the contamination appears and splice in the real signoff, rather
+// than silently storing fabricated branding in a personal job application.
+function sanitizeContamination(text, profileName) {
+  const lower = (text || '').toLowerCase();
+  for (const bad of KNOWN_CONTAMINATION_STRINGS) {
+    const idx = lower.indexOf(bad);
+    if (idx === -1) continue;
+    // Walk back to the start of whatever sentence/clause introduces the
+    // contamination (last '. ' or newline before it), so we don't leave a
+    // dangling sentence fragment.
+    const cutPoints = [text.lastIndexOf('. ', idx), text.lastIndexOf('\n', idx)];
+    const cut = Math.max(...cutPoints);
+    const kept = cut === -1 ? '' : text.slice(0, cut + 1).trim();
+    return `${kept}${kept ? ' ' : ''}${profileName}`.trim();
+  }
+  return text;
+}
+
 export async function generateApplication(jobId) {
   const db = getDb();
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
@@ -104,13 +141,27 @@ export async function generateApplication(jobId) {
 
   const prompt = buildPrompt(job, profile);
   const raw = await runOllama(prompt);
-  const { cv_bullets, cover_letter, short_message } = parseSections(raw);
+  const parsed = parseSections(raw);
+  const contaminationFound = findContamination(parsed.short_message) || findContamination(parsed.cover_letter);
+
+  let cv_bullets = parsed.cv_bullets;
+  let cover_letter = parsed.cover_letter;
+  let short_message = parsed.short_message;
+
+  let warning = null;
+  if (raw.length < 50) {
+    warning = 'WARNING: short/possibly malformed output';
+  } else if (contaminationFound) {
+    cover_letter = sanitizeContamination(cover_letter, profile.name);
+    short_message = sanitizeContamination(short_message, profile.name);
+    warning = `NOTE: model output contained unrelated branding ("${contaminationFound}") — auto-stripped and replaced with the correct signoff. Review before using.`;
+  }
 
   const now = nowIso();
   const info = db.prepare(`
     INSERT INTO applications (job_id, profile_id, status, cv_variant, cover_letter, proposal, notes, created_at, updated_at)
     VALUES (?, ?, 'WAITING_APPROVAL', ?, ?, ?, ?, ?, ?)
-  `).run(jobId, scoreRow.profile_id, cv_bullets, cover_letter, short_message, raw.length < 50 ? 'WARNING: short/possibly malformed output' : null, now, now);
+  `).run(jobId, scoreRow.profile_id, cv_bullets, cover_letter, short_message, warning, now, now);
 
   db.prepare(`INSERT INTO job_events (job_id, event, detail, created_at) VALUES (?, 'APPLICATION_DRAFTED', ?, ?)`)
     .run(jobId, JSON.stringify({ application_id: Number(info.lastInsertRowid) }), now);
